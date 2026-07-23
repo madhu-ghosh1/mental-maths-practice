@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mental-maths-v1';
+const CACHE_NAME = 'mental-maths-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,8 @@ const ASSETS = [
   './css/styles.css',
   './js/topics.js',
   './js/storage.js',
+  './js/jokes.js',
+  './js/fun.js',
   './js/charts.js',
   './js/app.js',
   './icons/icon-192.png',
@@ -27,18 +29,19 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+// Network-first, falling back to cache. Always serves the latest deploy when
+// online; only falls back to the last cached copy when offline. (A pure
+// cache-first strategy would silently keep serving stale files forever,
+// since this file itself must change for the browser to notice an update.)
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
-        .then((response) => {
-          const copy = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-          return response;
-        })
-        .catch(() => cached);
-    })
+    fetch(event.request)
+      .then((response) => {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+        return response;
+      })
+      .catch(() => caches.match(event.request))
   );
 });

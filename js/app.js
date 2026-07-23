@@ -361,6 +361,15 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
   });
+  // When a newly-deployed service worker takes over, reload once so the page
+  // picks up the fresh assets it just fetched instead of staying on whatever
+  // was already loaded in memory from the previous version.
+  let reloadedForUpdate = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (reloadedForUpdate) return;
+    reloadedForUpdate = true;
+    window.location.reload();
+  });
 }
 
 applyTheme(data.settings.theme);
