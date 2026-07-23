@@ -14,7 +14,7 @@ function daysBetween(a, b) {
 
 function defaultData() {
   return {
-    settings: { activeTopics: TOPIC_ORDER.slice(), name: '' },
+    settings: { activeTopics: TOPIC_ORDER.slice(), name: 'Eva', theme: 'auto', welcomeShown: false },
     streak: { current: 0, longest: 0, lastPracticeDate: null },
     sessions: []
   };

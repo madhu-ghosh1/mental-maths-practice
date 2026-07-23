@@ -10,6 +10,89 @@ function showScreen(name) {
   $$('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.nav === name));
 }
 
+// ---------------- Theme ----------------
+function applyTheme(theme) {
+  if (theme === 'light' || theme === 'dark') {
+    document.documentElement.dataset.theme = theme;
+  } else {
+    delete document.documentElement.dataset.theme;
+  }
+}
+
+function effectiveTheme() {
+  const t = document.documentElement.dataset.theme;
+  if (t === 'light' || t === 'dark') return t;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+
+function setTheme(theme) {
+  data.settings.theme = theme;
+  saveData(data);
+  applyTheme(theme);
+  $('#themeToggleBtn').textContent = effectiveTheme() === 'dark' ? '☀️' : '🌙';
+  $$('.theme-option').forEach(b => b.classList.toggle('active', b.dataset.themeValue === theme));
+  if ($('#screen-trends').classList.contains('active')) renderTrends();
+}
+
+$('#themeToggleBtn').addEventListener('click', () => {
+  setTheme(effectiveTheme() === 'dark' ? 'light' : 'dark');
+});
+
+$$('.theme-option').forEach(btn => {
+  btn.addEventListener('click', () => setTheme(btn.dataset.themeValue));
+});
+
+// ---------------- Jokes ----------------
+function showJoke(joke, { isWelcome } = {}) {
+  const overlay = $('#jokeOverlay');
+  const textEl = $('#jokeText');
+  const nextBtn = $('#jokeNextBtn');
+  const closeBtn = $('#jokeCloseBtn');
+  let step = 0;
+
+  function render() {
+    if (joke.type === 'oneliner') {
+      textEl.textContent = joke.text;
+      nextBtn.style.display = 'none';
+      closeBtn.style.display = 'block';
+      closeBtn.textContent = isWelcome ? "Let's practice! ✏️" : 'Nice one! 😄';
+      return;
+    }
+    const steps = ['Knock knock!', "Who's there?", `${joke.name}.`, `${joke.name} who?`, joke.punchline];
+    const nextLabels = ["Who's there?", 'Tell me!', `${joke.name} who?`, 'Go on... 🥁'];
+    textEl.textContent = steps[step];
+    if (step < steps.length - 1) {
+      nextBtn.style.display = 'block';
+      closeBtn.style.display = 'none';
+      nextBtn.textContent = nextLabels[step];
+    } else {
+      nextBtn.style.display = 'none';
+      closeBtn.style.display = 'block';
+      closeBtn.textContent = isWelcome ? "Let's practice! ✏️" : 'Ha! Another? 😄';
+    }
+  }
+
+  nextBtn.onclick = () => { step++; render(); };
+  closeBtn.onclick = () => {
+    overlay.style.display = 'none';
+    if (isWelcome) {
+      data.settings.welcomeShown = true;
+      saveData(data);
+    }
+  };
+
+  render();
+  overlay.style.display = 'flex';
+}
+
+$('#jokeBtn').addEventListener('click', () => showJoke(getRandomJoke()));
+
+function maybeShowWelcome() {
+  if (!data.settings.welcomeShown) {
+    showJoke(getWelcomeJoke(), { isWelcome: true });
+  }
+}
+
 // ---------------- Home ----------------
 function renderHome() {
   const name = data.settings.name;
@@ -33,6 +116,8 @@ function renderHome() {
 
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   $('#installBanner').style.display = isStandalone ? 'none' : 'flex';
+
+  $('#themeToggleBtn').textContent = effectiveTheme() === 'dark' ? '☀️' : '🌙';
 }
 
 // ---------------- Practice ----------------
@@ -105,8 +190,14 @@ function submitAnswer(rawAnswer) {
   }
 
   const banner = $('#feedbackBanner');
-  banner.textContent = isCorrect ? '✓ Correct!' : `✗ Answer: ${q.answer}`;
+  banner.textContent = isCorrect ? randomReaction(CORRECT_REACTIONS) : randomReaction(INCORRECT_REACTIONS, q.answer);
   banner.className = 'feedback-banner ' + (isCorrect ? 'correct' : 'incorrect');
+  if (!isCorrect) {
+    const card = $('.question-card');
+    card.classList.remove('shake');
+    void card.offsetWidth;
+    card.classList.add('shake');
+  }
 
   session.results.push({ topic: q.topic, correct: isCorrect });
   if (isCorrect) session.correct++;
@@ -178,6 +269,10 @@ function renderSummary(record, prevStreak) {
     badgesEl.appendChild(span);
   });
 
+  if (badges.length > 0) {
+    setTimeout(fireConfetti, 200);
+  }
+
   const breakdownEl = $('#summaryBreakdown');
   breakdownEl.innerHTML = '';
   Object.entries(record.topics).forEach(([key, t]) => {
@@ -198,6 +293,7 @@ function renderTrends() {
 // ---------------- Settings ----------------
 function renderSettings() {
   $('#nameInput').value = data.settings.name || '';
+  $$('.theme-option').forEach(b => b.classList.toggle('active', b.dataset.themeValue === data.settings.theme));
 
   const list = $('#topicToggleList');
   list.innerHTML = '';
@@ -267,5 +363,7 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+applyTheme(data.settings.theme);
 renderHome();
 showScreen('home');
+maybeShowWelcome();
