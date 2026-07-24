@@ -106,9 +106,8 @@
     </div>
 
     <div id="challengeActive" class="card" style="display:none; flex-direction:column; gap:16px; text-align:center;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
+      <div style="display:flex; justify-content:center;">
         <span id="challengeTimer" class="badge">2:00</span>
-        <span id="challengeScore" class="section-title">Score: 0</span>
       </div>
       <div class="progress-bar"><div id="challengeTimeFill" class="progress-bar-fill" style="width:100%"></div></div>
       <div class="question-text" id="challengeQuestionText" style="font-size:1.7rem;">7 × 8 = ?</div>
@@ -127,6 +126,11 @@
         <button id="challengeAgainBtn" class="btn btn-secondary" style="flex:1;">Try Again</button>
         <button id="challengeHomeBtn" class="btn btn-primary" style="flex:1;">Back to Home</button>
       </div>
+    </div>
+
+    <div id="challengeReviewCard" class="card" style="display:none;">
+      <div class="section-title" style="margin-bottom:8px;">Answer review</div>
+      <div id="challengeReviewList"></div>
     </div>
   </section>
 

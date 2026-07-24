@@ -224,13 +224,13 @@ $('#answerForm').addEventListener('submit', (e) => {
 });
 
 // ---------------- Multiplication Challenge ----------------
-let challenge = null; // { score, total, timeLeft, timerId, currentAnswer }
+let challenge = null; // { score, total, timeLeft, timerId, current: {a,b,answer}, attempts: [] }
 const CHALLENGE_DURATION = 120;
 
 function generateTableQuestion() {
-  const table = randInt(2, 20);
-  const mult = randInt(1, 12);
-  return { text: `${table} × ${mult} = ?`, answer: table * mult };
+  const a = randInt(2, 20);
+  const b = randInt(1, 12);
+  return { a, b, answer: a * b };
 }
 
 function formatMMSS(totalSeconds) {
@@ -243,6 +243,7 @@ function renderChallengeIntro() {
   $('#challengeIntro').style.display = 'flex';
   $('#challengeActive').style.display = 'none';
   $('#challengeResult').style.display = 'none';
+  $('#challengeReviewCard').style.display = 'none';
   $('#challengeIntroBest').textContent = `Best score: ${data.challenge.bestScore}`;
 }
 
@@ -252,9 +253,8 @@ function openChallenge() {
 }
 
 function nextChallengeQuestion() {
-  const q = generateTableQuestion();
-  challenge.currentAnswer = q.answer;
-  $('#challengeQuestionText').textContent = q.text;
+  challenge.current = generateTableQuestion();
+  $('#challengeQuestionText').textContent = `${challenge.current.a} × ${challenge.current.b} = ?`;
   const input = $('#challengeAnswerInput');
   input.value = '';
   setTimeout(() => input.focus(), 30);
@@ -262,11 +262,11 @@ function nextChallengeQuestion() {
 
 function startChallenge() {
   if (challenge && challenge.timerId) clearInterval(challenge.timerId);
-  challenge = { score: 0, total: 0, timeLeft: CHALLENGE_DURATION, timerId: null, currentAnswer: null };
+  challenge = { score: 0, total: 0, timeLeft: CHALLENGE_DURATION, timerId: null, current: null, attempts: [] };
   $('#challengeIntro').style.display = 'none';
   $('#challengeResult').style.display = 'none';
+  $('#challengeReviewCard').style.display = 'none';
   $('#challengeActive').style.display = 'flex';
-  $('#challengeScore').textContent = 'Score: 0';
   $('#challengeTimer').textContent = formatMMSS(CHALLENGE_DURATION);
   $('#challengeTimeFill').style.width = '100%';
   nextChallengeQuestion();
@@ -283,17 +283,39 @@ $('#challengeAnswerForm').addEventListener('submit', (e) => {
   e.preventDefault();
   if (!challenge) return;
   const input = $('#challengeAnswerInput');
+  const q = challenge.current;
   const num = parseFloat(input.value);
+  const isCorrect = !isNaN(num) && num === q.answer;
   challenge.total++;
-  if (!isNaN(num) && num === challenge.currentAnswer) challenge.score++;
-  $('#challengeScore').textContent = `Score: ${challenge.score}`;
+  if (isCorrect) challenge.score++;
+  challenge.attempts.push({ a: q.a, b: q.b, answer: q.answer, given: input.value.trim(), isCorrect });
   nextChallengeQuestion();
 });
+
+function renderChallengeReview() {
+  const list = $('#challengeReviewList');
+  list.innerHTML = '';
+  challenge.attempts.forEach(att => {
+    const row = document.createElement('div');
+    row.className = 'review-row ' + (att.isCorrect ? 'correct' : 'incorrect');
+    const question = `${att.a} × ${att.b}`;
+    const detail = att.isCorrect
+      ? `<span class="correct-ans">${att.answer}</span>`
+      : `<span class="given">${att.given || '—'}</span><span class="correct-ans">${att.answer}</span>`;
+    row.innerHTML = `
+      <span class="review-icon">${att.isCorrect ? '✓' : '✗'}</span>
+      <span class="review-question">${question}</span>
+      <span class="review-detail">${detail}</span>`;
+    list.appendChild(row);
+  });
+  $('#challengeReviewCard').style.display = challenge.attempts.length ? 'block' : 'none';
+}
 
 function endChallenge() {
   clearInterval(challenge.timerId);
   $('#challengeActive').style.display = 'none';
   $('#challengeResult').style.display = 'block';
+  renderChallengeReview();
 
   const isNewBest = recordChallengeResult(data, challenge.score);
   $('#challengeResultScore').textContent = challenge.score;

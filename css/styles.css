@@ -349,6 +349,23 @@ body {
 }
 .topic-breakdown-row:last-child { border-bottom: none; }
 
+.review-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.92rem;
+}
+.review-row:last-child { border-bottom: none; }
+.review-icon { font-weight: 800; width: 18px; flex-shrink: 0; }
+.review-row.correct .review-icon { color: var(--good); }
+.review-row.incorrect .review-icon { color: var(--bad); }
+.review-question { flex: 1; color: var(--text); }
+.review-detail { font-size: 0.82rem; color: var(--muted); text-align: right; }
+.review-row.incorrect .review-detail .given { color: var(--bad); text-decoration: line-through; margin-right: 6px; }
+.review-row.incorrect .review-detail .correct-ans { color: var(--good); font-weight: 700; }
+
 /* Settings */
 .topic-toggle {
   display: flex;
