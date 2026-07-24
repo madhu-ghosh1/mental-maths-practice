@@ -243,6 +243,7 @@ function renderChallengeIntro() {
   $('#challengeIntro').style.display = 'flex';
   $('#challengeActive').style.display = 'none';
   $('#challengeResult').style.display = 'none';
+  $('#challengeFocusCard').style.display = 'none';
   $('#challengeReviewCard').style.display = 'none';
   $('#challengeIntroBest').textContent = `Best score: ${data.challenge.bestScore}`;
 }
@@ -265,6 +266,7 @@ function startChallenge() {
   challenge = { score: 0, total: 0, timeLeft: CHALLENGE_DURATION, timerId: null, current: null, attempts: [] };
   $('#challengeIntro').style.display = 'none';
   $('#challengeResult').style.display = 'none';
+  $('#challengeFocusCard').style.display = 'none';
   $('#challengeReviewCard').style.display = 'none';
   $('#challengeActive').style.display = 'flex';
   $('#challengeTimer').textContent = formatMMSS(CHALLENGE_DURATION);
@@ -311,10 +313,48 @@ function renderChallengeReview() {
   $('#challengeReviewCard').style.display = challenge.attempts.length ? 'block' : 'none';
 }
 
+function computeFocusTables(attempts) {
+  const stats = {};
+  attempts.forEach(att => {
+    if (!stats[att.a]) stats[att.a] = { table: att.a, wrong: 0, total: 0 };
+    stats[att.a].total++;
+    if (!att.isCorrect) stats[att.a].wrong++;
+  });
+  return Object.values(stats)
+    .filter(s => s.wrong > 0)
+    .sort((a, b) => b.wrong - a.wrong || (b.wrong / b.total) - (a.wrong / a.total));
+}
+
+function renderChallengeFocus() {
+  const card = $('#challengeFocusCard');
+  const body = $('#challengeFocusBody');
+  const name = data.settings.name || 'you';
+
+  if (challenge.attempts.length === 0) {
+    card.style.display = 'none';
+    return;
+  }
+  card.style.display = 'block';
+
+  const focusTables = computeFocusTables(challenge.attempts);
+  if (focusTables.length === 0) {
+    body.innerHTML = `<div>🌟 No weak spots today — ${name} nailed every table!</div>`;
+    return;
+  }
+
+  const pills = focusTables.slice(0, 4)
+    .map(t => `<span class="focus-pill">${t.table}× <small>(${t.wrong} missed)</small></span>`)
+    .join('');
+  body.innerHTML = `
+    <div style="margin-bottom:10px;">Worth practising next, ${name}:</div>
+    <div style="display:flex; flex-wrap:wrap; gap:8px;">${pills}</div>`;
+}
+
 function endChallenge() {
   clearInterval(challenge.timerId);
   $('#challengeActive').style.display = 'none';
   $('#challengeResult').style.display = 'block';
+  renderChallengeFocus();
   renderChallengeReview();
 
   const isNewBest = recordChallengeResult(data, challenge.score);

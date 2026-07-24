@@ -366,6 +366,24 @@ body {
 .review-row.incorrect .review-detail .given { color: var(--bad); text-decoration: line-through; margin-right: 6px; }
 .review-row.incorrect .review-detail .correct-ans { color: var(--good); font-weight: 700; }
 
+.focus-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 122, 168, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(255, 122, 168, 0.35);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-weight: 700;
+  font-size: 0.88rem;
+}
+.focus-pill small {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
 /* Settings */
 .topic-toggle {
   display: flex;
