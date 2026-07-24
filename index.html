@@ -55,7 +55,14 @@
       </div>
     </div>
 
-    <button id="startPracticeBtn" class="btn btn-primary btn-block">Start Today's Practice (20 Qs)</button>
+    <div class="challenge-row">
+      <button id="startPracticeBtn" class="btn btn-primary challenge-row-btn">Start Today's Practice (20 Qs)</button>
+      <button id="openChallengeBtn" class="challenge-card">
+        <div class="challenge-card-icon">🎯</div>
+        <div class="challenge-card-title">Times Tables Challenge</div>
+        <div class="challenge-card-sub" id="challengeBestSub">2 min blitz</div>
+      </button>
+    </div>
 
     <div id="installBanner" class="install-banner">
       <span>💡</span>
@@ -84,6 +91,42 @@
       <div id="choiceAnswerWrap" class="choice-grid" style="display:none;"></div>
 
       <div id="feedbackBanner" class="feedback-banner"></div>
+    </div>
+  </section>
+
+  <!-- MULTIPLICATION CHALLENGE -->
+  <section id="screen-challenge" class="screen">
+    <div class="topbar"><h1>🎯 Times Tables Challenge</h1></div>
+
+    <div id="challengeIntro" class="card" style="display:flex; flex-direction:column; gap:14px; align-items:center; text-align:center;">
+      <div style="font-size:2.4rem;">🎯</div>
+      <div>Answer as many <strong>2&times; to 20&times;</strong> table questions as you can in <strong>2 minutes</strong>!</div>
+      <div id="challengeIntroBest" class="section-title">Best score: 0</div>
+      <button id="challengeStartBtn" class="btn btn-primary btn-block">Start 2-Minute Blitz</button>
+    </div>
+
+    <div id="challengeActive" class="card" style="display:none; flex-direction:column; gap:16px; text-align:center;">
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <span id="challengeTimer" class="badge">2:00</span>
+        <span id="challengeScore" class="section-title">Score: 0</span>
+      </div>
+      <div class="progress-bar"><div id="challengeTimeFill" class="progress-bar-fill" style="width:100%"></div></div>
+      <div class="question-text" id="challengeQuestionText" style="font-size:1.7rem;">7 × 8 = ?</div>
+      <form id="challengeAnswerForm" style="display:flex; flex-direction:column; gap:12px;">
+        <input id="challengeAnswerInput" class="answer-input" type="number" inputmode="numeric" placeholder="Your answer" autocomplete="off">
+        <button type="submit" class="btn btn-primary">Submit</button>
+      </form>
+    </div>
+
+    <div id="challengeResult" class="card summary-score" style="display:none;">
+      <div class="big" id="challengeResultScore">0</div>
+      <div class="section-title" style="margin-top:6px;">questions answered correctly</div>
+      <div id="challengeResultAccuracy" class="section-title" style="margin-top:2px;">0/0 attempted</div>
+      <div id="challengeNewBestBadge" class="badge" style="display:none; margin-top:12px;">🏆 New best score!</div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button id="challengeAgainBtn" class="btn btn-secondary" style="flex:1;">Try Again</button>
+        <button id="challengeHomeBtn" class="btn btn-primary" style="flex:1;">Back to Home</button>
+      </div>
     </div>
   </section>
 

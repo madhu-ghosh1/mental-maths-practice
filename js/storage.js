@@ -16,7 +16,8 @@ function defaultData() {
   return {
     settings: { activeTopics: TOPIC_ORDER.slice(), name: 'Eva', theme: 'auto', welcomeShown: false },
     streak: { current: 0, longest: 0, lastPracticeDate: null },
-    sessions: []
+    sessions: [],
+    challenge: { bestScore: 0, attempts: 0 }
   };
 }
 
@@ -27,7 +28,8 @@ function loadData() {
     const parsed = JSON.parse(raw);
     return Object.assign(defaultData(), parsed, {
       settings: Object.assign(defaultData().settings, parsed.settings),
-      streak: Object.assign(defaultData().streak, parsed.streak)
+      streak: Object.assign(defaultData().streak, parsed.streak),
+      challenge: Object.assign(defaultData().challenge, parsed.challenge)
     });
   } catch (e) {
     return defaultData();
@@ -55,6 +57,14 @@ function recordSession(data, session) {
 
   saveData(data);
   return data;
+}
+
+function recordChallengeResult(data, score) {
+  data.challenge.attempts += 1;
+  const isNewBest = score > data.challenge.bestScore;
+  if (isNewBest) data.challenge.bestScore = score;
+  saveData(data);
+  return isNewBest;
 }
 
 function practicedToday(data) {

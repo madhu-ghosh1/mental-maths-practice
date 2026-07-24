@@ -114,6 +114,10 @@ function renderHome() {
   $('#weekAccuracy').textContent = wk === null ? '—' : wk + '%';
   $('#totalSessions').textContent = data.sessions.length;
 
+  $('#challengeBestSub').textContent = data.challenge.attempts > 0
+    ? `Best: ${data.challenge.bestScore}`
+    : '2 min blitz';
+
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
   $('#installBanner').style.display = isStandalone ? 'none' : 'flex';
 
@@ -217,6 +221,93 @@ $('#answerForm').addEventListener('submit', (e) => {
   const input = $('#answerInput');
   if (input.disabled || input.value.trim() === '') return;
   submitAnswer(input.value.trim());
+});
+
+// ---------------- Multiplication Challenge ----------------
+let challenge = null; // { score, total, timeLeft, timerId, currentAnswer }
+const CHALLENGE_DURATION = 120;
+
+function generateTableQuestion() {
+  const table = randInt(2, 20);
+  const mult = randInt(1, 12);
+  return { text: `${table} × ${mult} = ?`, answer: table * mult };
+}
+
+function formatMMSS(totalSeconds) {
+  const m = Math.floor(totalSeconds / 60);
+  const s = totalSeconds % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
+
+function renderChallengeIntro() {
+  $('#challengeIntro').style.display = 'flex';
+  $('#challengeActive').style.display = 'none';
+  $('#challengeResult').style.display = 'none';
+  $('#challengeIntroBest').textContent = `Best score: ${data.challenge.bestScore}`;
+}
+
+function openChallenge() {
+  renderChallengeIntro();
+  showScreen('challenge');
+}
+
+function nextChallengeQuestion() {
+  const q = generateTableQuestion();
+  challenge.currentAnswer = q.answer;
+  $('#challengeQuestionText').textContent = q.text;
+  const input = $('#challengeAnswerInput');
+  input.value = '';
+  setTimeout(() => input.focus(), 30);
+}
+
+function startChallenge() {
+  if (challenge && challenge.timerId) clearInterval(challenge.timerId);
+  challenge = { score: 0, total: 0, timeLeft: CHALLENGE_DURATION, timerId: null, currentAnswer: null };
+  $('#challengeIntro').style.display = 'none';
+  $('#challengeResult').style.display = 'none';
+  $('#challengeActive').style.display = 'flex';
+  $('#challengeScore').textContent = 'Score: 0';
+  $('#challengeTimer').textContent = formatMMSS(CHALLENGE_DURATION);
+  $('#challengeTimeFill').style.width = '100%';
+  nextChallengeQuestion();
+
+  challenge.timerId = setInterval(() => {
+    challenge.timeLeft--;
+    $('#challengeTimer').textContent = formatMMSS(Math.max(0, challenge.timeLeft));
+    $('#challengeTimeFill').style.width = `${(challenge.timeLeft / CHALLENGE_DURATION) * 100}%`;
+    if (challenge.timeLeft <= 0) endChallenge();
+  }, 1000);
+}
+
+$('#challengeAnswerForm').addEventListener('submit', (e) => {
+  e.preventDefault();
+  if (!challenge) return;
+  const input = $('#challengeAnswerInput');
+  const num = parseFloat(input.value);
+  challenge.total++;
+  if (!isNaN(num) && num === challenge.currentAnswer) challenge.score++;
+  $('#challengeScore').textContent = `Score: ${challenge.score}`;
+  nextChallengeQuestion();
+});
+
+function endChallenge() {
+  clearInterval(challenge.timerId);
+  $('#challengeActive').style.display = 'none';
+  $('#challengeResult').style.display = 'block';
+
+  const isNewBest = recordChallengeResult(data, challenge.score);
+  $('#challengeResultScore').textContent = challenge.score;
+  $('#challengeResultAccuracy').textContent = `${challenge.score}/${challenge.total} attempted`;
+  $('#challengeNewBestBadge').style.display = isNewBest ? 'inline-flex' : 'none';
+  if (isNewBest) setTimeout(fireConfetti, 200);
+}
+
+$('#openChallengeBtn').addEventListener('click', openChallenge);
+$('#challengeStartBtn').addEventListener('click', startChallenge);
+$('#challengeAgainBtn').addEventListener('click', startChallenge);
+$('#challengeHomeBtn').addEventListener('click', () => {
+  renderHome();
+  showScreen('home');
 });
 
 function finishSession() {
@@ -338,8 +429,16 @@ $('#resetDataBtn').addEventListener('click', () => {
 });
 
 // ---------------- Navigation wiring ----------------
+function abandonChallengeIfActive() {
+  if (challenge && challenge.timerId) {
+    clearInterval(challenge.timerId);
+    challenge.timerId = null;
+  }
+}
+
 $$('.nav-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    abandonChallengeIfActive();
     const target = btn.dataset.nav;
     showScreen(target);
     if (target === 'trends') renderTrends();
