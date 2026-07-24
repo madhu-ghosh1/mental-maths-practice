@@ -93,6 +93,60 @@ function maybeShowWelcome() {
   }
 }
 
+// ---------------- Morning Summary ----------------
+const LEVEL_NAMES = { 1: 'Easy', 2: 'Medium', 3: 'Hard' };
+
+function buildMorningSummary(data) {
+  const lastSession = data.sessions[data.sessions.length - 1];
+  const lines = [];
+
+  const pct = Math.round((lastSession.correct / lastSession.total) * 100);
+  lines.push(`📝 Last time: ${lastSession.correct}/${lastSession.total} correct (${pct}%)`);
+  lines.push(`🔥 Current streak: ${data.streak.current} day${data.streak.current === 1 ? '' : 's'}`);
+
+  (lastSession.levelChanges || []).forEach(change => {
+    const label = TOPICS[change.topic].label;
+    const newLevel = LEVEL_NAMES[getTopicLevel(data, change.topic)];
+    lines.push(change.direction === 'up'
+      ? `🎉 ${label} leveled up to ${newLevel}!`
+      : `📉 ${label} dropped back to ${newLevel} — let's rebuild that.`);
+  });
+
+  const focusTopic = weakestActiveTopic(data, data.settings.activeTopics);
+  if (focusTopic) {
+    lines.push(`🎯 Let's level up ${TOPICS[focusTopic].label} today!`);
+  }
+
+  return lines;
+}
+
+function maybeShowMorningSummary() {
+  if (!data.settings.welcomeShown) return;
+  if (data.sessions.length === 0) return;
+  if (data.settings.lastSummaryShownDate === todayStr()) return;
+
+  const name = data.settings.name;
+  $('#morningSummaryTitle').textContent = name ? `Good morning, ${name}! 👋` : 'Good morning! 👋';
+
+  const textEl = $('#morningSummaryText');
+  textEl.innerHTML = '';
+  buildMorningSummary(data).forEach(line => {
+    const row = document.createElement('div');
+    row.className = 'summary-line';
+    row.textContent = line;
+    textEl.appendChild(row);
+  });
+
+  $('#morningSummaryOverlay').style.display = 'flex';
+}
+
+$('#morningSummaryStartBtn').addEventListener('click', () => {
+  $('#morningSummaryOverlay').style.display = 'none';
+  data.settings.lastSummaryShownDate = todayStr();
+  saveData(data);
+  startPractice();
+});
+
 // ---------------- Home ----------------
 function renderHome() {
   const name = data.settings.name;
@@ -127,11 +181,14 @@ function renderHome() {
 // ---------------- Practice ----------------
 function startPractice() {
   const active = data.settings.activeTopics;
+  const levelsByTopic = {};
+  active.forEach(key => { levelsByTopic[key] = getTopicLevel(data, key); });
   session = {
-    questions: buildSession(active, 20),
+    questions: buildSession(active, 20, levelsByTopic),
     index: 0,
     correct: 0,
     results: [],
+    levelChanges: [],
     startedAt: Date.now()
   };
   showScreen('practice');
@@ -205,6 +262,9 @@ function submitAnswer(rawAnswer) {
 
   session.results.push({ topic: q.topic, correct: isCorrect });
   if (isCorrect) session.correct++;
+
+  const levelChange = updateTopicLevel(data, q.topic, isCorrect);
+  if (levelChange) session.levelChanges.push({ topic: q.topic, direction: levelChange.direction });
 
   setTimeout(() => {
     session.index++;
@@ -387,7 +447,8 @@ function finishSession() {
     topics,
     correct: session.correct,
     total: session.questions.length,
-    durationSec
+    durationSec,
+    levelChanges: session.levelChanges
   };
   recordSession(data, record);
 
@@ -544,3 +605,4 @@ applyTheme(data.settings.theme);
 renderHome();
 showScreen('home');
 maybeShowWelcome();
+maybeShowMorningSummary();

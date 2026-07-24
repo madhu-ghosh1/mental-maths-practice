@@ -544,6 +544,14 @@ canvas { width: 100%; display: block; }
   align-items: center;
   justify-content: center;
 }
+.summary-line {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  color: var(--text);
+}
 @keyframes pop-in {
   from { transform: scale(0.85); opacity: 0; }
   to { transform: scale(1); opacity: 1; }

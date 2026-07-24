@@ -1,4 +1,4 @@
-const CACHE_NAME = 'mental-maths-v2';
+const CACHE_NAME = 'mental-maths-v3';
 const ASSETS = [
   './',
   './index.html',
