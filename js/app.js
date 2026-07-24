@@ -457,15 +457,22 @@ window.addEventListener('resize', () => {
 
 // ---------------- Init ----------------
 if ('serviceWorker' in navigator) {
+  // A page's very first-ever visit also fires 'controllerchange' once the
+  // freshly-installed worker claims it (there was no controller before) --
+  // that is NOT an update, just first install, so it must not trigger a
+  // reload or it could wipe an in-progress practice/challenge session.
+  const hadControllerAtLoad = !!navigator.serviceWorker.controller;
+
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('service-worker.js').catch(() => {});
   });
-  // When a newly-deployed service worker takes over, reload once so the page
-  // picks up the fresh assets it just fetched instead of staying on whatever
-  // was already loaded in memory from the previous version.
+
+  // On a returning visit where a newer service worker takes over, reload
+  // once so the page picks up the fresh assets it just fetched instead of
+  // staying on whatever was already loaded in memory from the old version.
   let reloadedForUpdate = false;
   navigator.serviceWorker.addEventListener('controllerchange', () => {
-    if (reloadedForUpdate) return;
+    if (!hadControllerAtLoad || reloadedForUpdate) return;
     reloadedForUpdate = true;
     window.location.reload();
   });
